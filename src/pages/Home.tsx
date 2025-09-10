@@ -26,6 +26,14 @@ const TransactionTable = styled.table`
   }
 `;
 
+const Painel = styled.div`
+  display: flex;
+  align-items: center;
+  gap: 4rem;
+  color: ${(props) => props.theme.colors.text};
+  align-items: flex-start;
+`;
+
 type Transacao = {
   id: string;
   createdAt: string;
@@ -85,28 +93,35 @@ export function Home() {
 
   return (
     <div>
-      <Chart data={chartData} />
-
-      <TransactionTable>
-        <thead>
-          <tr>
-            <th>Data</th>
-            <th>Descrição</th>
-            <th>Categoria</th>
-            <th>Valor</th>
-          </tr>
-        </thead>
-        <tbody>
-          {transactions.map((t) => (
-            <tr key={t.id}>
-              <td>{formatDate(t.createdAt)}</td>
-              <td>{t.descricao || "-"}</td>
-              <td>{t.categoria || "-"}</td>
-              <td>R$ {t.valor.toFixed(2)}</td>
-            </tr>
-          ))}
-        </tbody>
-      </TransactionTable>
+      <Painel>
+        <div>
+          <h1>Despesas</h1>
+          <Chart data={chartData} />
+        </div>
+        <div>
+          <h1>Transações</h1>
+          <TransactionTable>
+            <thead>
+              <tr>
+                <th>Data</th>
+                <th>Descrição</th>
+                <th>Categoria</th>
+                <th>Valor</th>
+              </tr>
+            </thead>
+            <tbody>
+              {transactions.map((t) => (
+                <tr key={t.id}>
+                  <td>{formatDate(t.createdAt)}</td>
+                  <td>{t.descricao || "-"}</td>
+                  <td>{t.categoria || "-"}</td>
+                  <td>R$ {t.valor.toFixed(2)}</td>
+                </tr>
+              ))}
+            </tbody>
+          </TransactionTable>
+        </div>
+      </Painel>
     </div>
   );
 }
