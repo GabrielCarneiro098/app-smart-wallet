@@ -13,6 +13,19 @@ const AppSection = styled.div`
   background: ${(props) => props.theme.colors.background};
 `;
 
+const ThemeButton = styled.button`
+  position: fixed;
+  top: 1rem;
+  right: 1rem;
+  background: ${(props) => props.theme.colors.background};
+  color: ${(props) => props.theme.colors.text};
+  border: 1px solid ${(props) => props.theme.colors.border};
+  padding: 0.5rem 1rem;
+  border-radius: 5px;
+  cursor: pointer;
+  font-size: 1rem;
+`;
+
 function App() {
   const [isDarkMode, setIsDarkMode] = useState(false);
 
@@ -34,9 +47,9 @@ function App() {
   return (
     <ThemeProvider theme={isDarkMode ? darkTheme : lightTheme}>
       <AppSection>
-        <button onClick={toggleTheme}>
+        <ThemeButton onClick={toggleTheme}>
           {isDarkMode ? "☀️ Modo Claro" : "🌙 Modo Escuro"}
-        </button>
+        </ThemeButton>
         <AppRoutes />
       </AppSection>
     </ThemeProvider>
