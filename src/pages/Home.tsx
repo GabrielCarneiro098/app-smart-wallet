@@ -2,6 +2,8 @@ import { useEffect, useState } from "react";
 import styled from "styled-components";
 import { fetchTransactions } from "../services/fetchTransactions";
 import { Chart } from "../components/Chart";
+import { useNavigate } from "react-router-dom";
+import GraficoMensal from "../components/GraficoMensal";
 
 const TransactionTable = styled.table`
   border-collapse: collapse;
@@ -45,6 +47,16 @@ type Transacao = {
 export function Home() {
   const [transactions, setTransactions] = useState<Transacao[]>([]);
   const [loading, setLoading] = useState(true);
+
+  const navigate = useNavigate();
+
+  // Simulação: obtenha o token do localStorage e tokens ativos de algum lugar
+  const token = localStorage.getItem("authToken");
+
+  if (!token) {
+    navigate("/login");
+    return null;
+  }
 
   function formatDate(isoString: string) {
     const date = new Date(isoString);
@@ -93,6 +105,9 @@ export function Home() {
 
   return (
     <div>
+
+<GraficoMensal></GraficoMensal>
+
       <Painel>
         <div>
           <h1>Despesas</h1>

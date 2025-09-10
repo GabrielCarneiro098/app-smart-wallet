@@ -14,7 +14,6 @@ export async function login({ login, senha }: LoginData) {
       senha,
     });
 
-    console.log(response.data.dados.usuarioLogado);
     localStorage.setItem(
       "authToken",
       response.data.dados.usuarioLogado.authToken

@@ -113,13 +113,12 @@ export function Login() {
   } | null>(null); // Armazena a resposta da requisição
 
   async function handleLogin() {
-    const resposta = await fazerLogin({ login, senha });
 
-    if (typeof resposta === "string") {
-      // Se a resposta for uma string (erro), setamos o estado de erro
-      setResponse({ success: false, message: resposta });
-    } else if (resposta.data.sucesso) {
-      // Se a resposta for bem-sucedida
+    
+    const loginLower = login.toLowerCase(); // Garante lowercase
+    const resposta = await fazerLogin({ login: loginLower, senha });
+
+    if (resposta.data.sucesso === true) {
       setResponse({ success: true, message: "Login bem-sucedido!" });
       navigate("/");
     }
