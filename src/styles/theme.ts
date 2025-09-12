@@ -6,6 +6,7 @@ export const lightTheme = {
     text: "#111111", // texto principal
     textSecondary: "#444", // texto secundário
     border: "#E0E0E0", // bordas suaves
+    chart: "#2AF704",
   },
   borderRadius: {
     sm: "8px",
@@ -22,6 +23,7 @@ export const darkTheme = {
     text: "#FFFFFF", // texto principal
     textSecondary: "#BDBDBD", // texto secundário
     border: "#444", // bordas sutis
+    chart: "#2AF704",
   },
   borderRadius: {
     sm: "8px",

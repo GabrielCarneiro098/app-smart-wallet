@@ -28,12 +28,22 @@ const TransactionTable = styled.table`
   }
 `;
 
+const Balance = styled.div`
+  margin: 20px 0;
+  font-size: 2rem;
+  font-weight: bold;
+  color: ${(props) => props.theme.colors.text};
+  box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+  background: ${(props) => props.theme.colors.card};
+  border-radius: 8px;
+  padding: 1rem 2rem;
+`;
+
 const Painel = styled.div`
   display: flex;
-  align-items: center;
+  align-items: flex-start;
   gap: 4rem;
   color: ${(props) => props.theme.colors.text};
-  align-items: flex-start;
 `;
 
 type Transacao = {
@@ -47,16 +57,33 @@ type Transacao = {
 export function Home() {
   const [transactions, setTransactions] = useState<Transacao[]>([]);
   const [loading, setLoading] = useState(true);
-
   const navigate = useNavigate();
 
-  // Simulação: obtenha o token do localStorage e tokens ativos de algum lugar
-  const token = localStorage.getItem("authToken");
+  useEffect(() => {
+    const token = localStorage.getItem("authToken");
 
-  if (!token) {
-    navigate("/login");
-    return null;
-  }
+    if (!token) {
+      navigate("/login");
+      return;
+    }
+
+    async function loadTransactions() {
+      try {
+        const data = await fetchTransactions();
+        if (Array.isArray(data)) {
+          setTransactions(data);
+        } else {
+          console.error("Erro ao carregar transações:", data);
+        }
+      } catch (err) {
+        console.error("Erro ao buscar transações:", err);
+      } finally {
+        setLoading(false);
+      }
+    }
+
+    loadTransactions();
+  }, [navigate]);
 
   function formatDate(isoString: string) {
     const date = new Date(isoString);
@@ -68,16 +95,22 @@ export function Home() {
     return `${day}/${month}/${year} ${hours}:${minutes}`;
   }
 
+  // Calcula total por categoria
   function calculateTotalsByCategory() {
     const totals: { [key: string]: number } = {};
     transactions.forEach((t) => {
       const category = t.categoria || "Outros";
-      if (!totals[category]) totals[category] = 0;
-      totals[category] += t.valor;
+      totals[category] = (totals[category] || 0) + t.valor;
     });
     return totals;
   }
 
+  // Calcula total geral
+  function calculateTotal() {
+    return transactions.reduce((sum, t) => sum + t.valor, 0);
+  }
+
+  // Prepara dados para o gráfico
   function getChartData() {
     const totals = calculateTotalsByCategory();
     return Object.entries(totals).map(([categoria, valor]) => ({
@@ -86,28 +119,17 @@ export function Home() {
     }));
   }
 
-  useEffect(() => {
-    async function loadTransactions() {
-      const data = await fetchTransactions();
-      if (Array.isArray(data)) {
-        setTransactions(data);
-      } else {
-        console.error("Erro ao carregar transações:", data);
-      }
-      setLoading(false);
-    }
-    loadTransactions();
-  }, []);
-
   if (loading) return <p>Carregando transações...</p>;
 
   const chartData = getChartData();
 
   return (
     <div>
-
-<GraficoMensal></GraficoMensal>
-
+      <Balance>
+        <h5>Total Balance</h5>
+        <h2>R$ {calculateTotal().toFixed(2)}</h2>
+        <GraficoMensal transactions={transactions} />
+      </Balance>
       <Painel>
         <div>
           <h1>Despesas</h1>

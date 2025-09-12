@@ -1,8 +1,11 @@
 import { useState, useEffect } from "react";
 import { AppRoutes } from "./routes/AppRoutes";
-import { ThemeProvider } from "styled-components";
+import { ThemeProvider as SCThemeProvider } from "styled-components";
+import { ThemeProvider as MuiThemeProvider } from "@mui/material/styles";
 import { lightTheme, darkTheme } from "./styles/theme";
+import { getMuiTheme } from "./styles/muiTheme";
 import styled from "styled-components";
+import { GlobalStyle } from "./styles/global";
 
 const AppSection = styled.div`
   min-height: 100vh;
@@ -29,7 +32,6 @@ const ThemeButton = styled.button`
 function App() {
   const [isDarkMode, setIsDarkMode] = useState(false);
 
-  // 🔹 Carrega tema salvo no localStorage ao iniciar
   useEffect(() => {
     const savedTheme = localStorage.getItem("theme");
     if (savedTheme === "dark") {
@@ -37,7 +39,6 @@ function App() {
     }
   }, []);
 
-  // 🔹 Atualiza localStorage sempre que mudar o tema
   const toggleTheme = () => {
     const newTheme = !isDarkMode;
     setIsDarkMode(newTheme);
@@ -45,14 +46,17 @@ function App() {
   };
 
   return (
-    <ThemeProvider theme={isDarkMode ? darkTheme : lightTheme}>
-      <AppSection>
-        <ThemeButton onClick={toggleTheme}>
-          {isDarkMode ? "☀️ Modo Claro" : "🌙 Modo Escuro"}
-        </ThemeButton>
-        <AppRoutes />
-      </AppSection>
-    </ThemeProvider>
+    <MuiThemeProvider theme={getMuiTheme(isDarkMode)}>
+      <SCThemeProvider theme={isDarkMode ? darkTheme : lightTheme}>
+        <GlobalStyle />
+        <AppSection>
+          <ThemeButton onClick={toggleTheme}>
+            {isDarkMode ? "☀️ Modo Claro" : "🌙 Modo Escuro"}
+          </ThemeButton>
+          <AppRoutes />
+        </AppSection>
+      </SCThemeProvider>
+    </MuiThemeProvider>
   );
 }
 

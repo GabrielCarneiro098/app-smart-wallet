@@ -9,6 +9,7 @@ declare module "styled-components" {
       text: string;
       textSecondary: string;
       border: string;
+      chart: string;
     };
     borderRadius: {
       sm: string;
