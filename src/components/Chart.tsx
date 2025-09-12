@@ -10,24 +10,7 @@ type ChartProps = {
   data: ChartData[];
 };
 
-const neonPalette = [
-  "#006414",
-  "#009929",
-  "#00CC44",
-  "#00FF66",
-  "#33FF99",
-  "#66FFCC",
-  "#99FFFF",
-  "#CCFFFF",
-  "#FFCCFF",
-  "#FF99FF",
-  "#FF66FF",
-  "#FF33FF",
-  "#FF00FF",
-  "#CC00CC",
-  "#990099",
-  "#660066",
-];
+
 
 export function Chart({ data }: ChartProps) {
   const settings = {
@@ -40,7 +23,6 @@ export function Chart({ data }: ChartProps) {
 
   return (
     <PieChart
-      colors={neonPalette}
       series={[
         {
           innerRadius: 60,

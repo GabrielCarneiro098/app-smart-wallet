@@ -1,5 +1,8 @@
 import { useTheme } from "styled-components";
 import { LineChart } from "@mui/x-charts/LineChart";
+import { red } from "@mui/material/colors";
+import { Button } from "@mui/material";
+import { useState } from "react";
 
 type Transacao = {
   id: string;
@@ -14,6 +17,8 @@ type Props = {
 };
 
 const margin = { right: 24 };
+
+const teste = [100, 200, 500, 900, 60, 600, 7, 300, 90, 300, 1100, 120]; // Dados de exemplo para a segunda série
 const xLabels = [
   "Jan",
   "Fev",
@@ -32,6 +37,8 @@ const xLabels = [
 export default function GraficoMensal({ transactions }: Props) {
   const theme = useTheme();
 
+  const [visibleSeries, setVisibleSeries] = useState<"first" | "second" | "both">("both");
+
   // Inicializa todos os meses com zero
   const monthlyData = new Array(12).fill(0);
 
@@ -40,20 +47,55 @@ export default function GraficoMensal({ transactions }: Props) {
     monthlyData[month] += t.valor;
   });
 
+  const series = [];
+  if (visibleSeries === "first" || visibleSeries === "both") {
+    series.push({
+      data: monthlyData,
+      showMark: false,
+      color: theme.colors.chart,
+      label: "Transações",
+    });
+  }
+  if (visibleSeries === "second" || visibleSeries === "both") {
+    series.push({
+      data: teste,
+      showMark: false,
+      color: red[500],
+      label: "Gastos",
+    });
+  }
+
   return (
-    <LineChart
-      height={300}
-      series={[
-        {
-          data: monthlyData,
-          showMark: false,
-          color: theme.colors.chart,
-        },
-      ]}
-      grid={{ horizontal: true }}
-      xAxis={[{ scaleType: "point", data: xLabels }]}
-      yAxis={[{ position: "none" }]}
-      margin={margin}
-    />
+    <div>
+      <div style={{ display: "flex", gap: "0.5rem", marginBottom: "1rem" }}>
+        <Button
+          variant={visibleSeries === "first" ? "contained" : "outlined"}
+          onClick={() => setVisibleSeries("first")}
+        >
+          Apenas Transações
+        </Button>
+        <Button
+          variant={visibleSeries === "second" ? "contained" : "outlined"}
+          onClick={() => setVisibleSeries("second")}
+        >
+          Apenas Gastos
+        </Button>
+        <Button
+          variant={visibleSeries === "both" ? "contained" : "outlined"}
+          onClick={() => setVisibleSeries("both")}
+        >
+          Mostrar Ambos
+        </Button>
+      </div>
+
+      <LineChart
+        height={300}
+        series={series}
+        grid={{ horizontal: true }}
+        xAxis={[{ scaleType: "point", data: xLabels }]}
+        yAxis={[{ position: "none" }]}
+        margin={margin}
+      />
+    </div>
   );
 }

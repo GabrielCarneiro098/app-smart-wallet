@@ -1,32 +1,12 @@
 import { useEffect, useState } from "react";
-import styled from "styled-components";
+import { useNavigate } from "react-router-dom";
 import { fetchTransactions } from "../services/fetchTransactions";
 import { Chart } from "../components/Chart";
-import { useNavigate } from "react-router-dom";
 import GraficoMensal from "../components/GraficoMensal";
-
-const TransactionTable = styled.table`
-  border-collapse: collapse;
-  margin: 20px 0;
-  font-size: 1rem;
-  font-family: Arial, sans-serif;
-  box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
-  background: ${(props) => props.theme.colors.card};
-  color: ${(props) => props.theme.colors.text};
-  border-radius: 8px;
-  overflow: hidden;
-  text-align: left;
-
-  th,
-  td {
-    padding: 12px 15px;
-    border-bottom: 1px solid ${(props) => props.theme.colors.border};
-  }
-
-  thead {
-    background: ${(props) => props.theme.colors.background};
-  }
-`;
+import styled from "styled-components";
+import { TransactionTable } from "../components/TransactionTable";
+import { TransactionModal } from "../components/TransacionModal";
+import { Button } from "@mui/material";
 
 const Balance = styled.div`
   margin: 20px 0;
@@ -57,11 +37,11 @@ type Transacao = {
 export function Home() {
   const [transactions, setTransactions] = useState<Transacao[]>([]);
   const [loading, setLoading] = useState(true);
+  const [showModal, setShowModal] = useState(false);
   const navigate = useNavigate();
 
   useEffect(() => {
     const token = localStorage.getItem("authToken");
-
     if (!token) {
       navigate("/login");
       return;
@@ -85,17 +65,10 @@ export function Home() {
     loadTransactions();
   }, [navigate]);
 
-  function formatDate(isoString: string) {
-    const date = new Date(isoString);
-    const day = String(date.getDate()).padStart(2, "0");
-    const month = String(date.getMonth() + 1).padStart(2, "0");
-    const year = date.getFullYear();
-    const hours = String(date.getHours()).padStart(2, "0");
-    const minutes = String(date.getMinutes()).padStart(2, "0");
-    return `${day}/${month}/${year} ${hours}:${minutes}`;
+  function calculateTotal() {
+    return transactions.reduce((sum, t) => sum + t.valor, 0);
   }
 
-  // Calcula total por categoria
   function calculateTotalsByCategory() {
     const totals: { [key: string]: number } = {};
     transactions.forEach((t) => {
@@ -105,12 +78,6 @@ export function Home() {
     return totals;
   }
 
-  // Calcula total geral
-  function calculateTotal() {
-    return transactions.reduce((sum, t) => sum + t.valor, 0);
-  }
-
-  // Prepara dados para o gráfico
   function getChartData() {
     const totals = calculateTotalsByCategory();
     return Object.entries(totals).map(([categoria, valor]) => ({
@@ -121,8 +88,6 @@ export function Home() {
 
   if (loading) return <p>Carregando transações...</p>;
 
-  const chartData = getChartData();
-
   return (
     <div>
       <Balance>
@@ -130,33 +95,26 @@ export function Home() {
         <h2>R$ {calculateTotal().toFixed(2)}</h2>
         <GraficoMensal transactions={transactions} />
       </Balance>
+
       <Painel>
         <div>
           <h1>Despesas</h1>
-          <Chart data={chartData} />
+          <Chart data={getChartData()} />
         </div>
+
         <div>
           <h1>Transações</h1>
-          <TransactionTable>
-            <thead>
-              <tr>
-                <th>Data</th>
-                <th>Descrição</th>
-                <th>Categoria</th>
-                <th>Valor</th>
-              </tr>
-            </thead>
-            <tbody>
-              {transactions.map((t) => (
-                <tr key={t.id}>
-                  <td>{formatDate(t.createdAt)}</td>
-                  <td>{t.descricao || "-"}</td>
-                  <td>{t.categoria || "-"}</td>
-                  <td>R$ {t.valor.toFixed(2)}</td>
-                </tr>
-              ))}
-            </tbody>
-          </TransactionTable>
+          <Button variant="contained" onClick={() => setShowModal(true)}>Adicionar Item</Button>
+
+          <TransactionTable transactions={transactions} />
+
+          <TransactionModal
+            visible={showModal}
+            onClose={() => setShowModal(false)}
+            onTransactionCreated={(nova) =>
+              setTransactions((prev) => [...prev, nova])
+            }
+          />
         </div>
       </Painel>
     </div>
