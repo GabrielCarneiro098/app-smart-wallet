@@ -1,18 +1,17 @@
 import axios, { AxiosError } from "axios";
-import type { Transacao } from "../types/types";
 
 const apiUrl = import.meta.env.VITE_API_URL;
 
-export async function fetchTransactions(): Promise<Transacao[] | string> {
+export async function deleteTransaction(id: string): Promise<string | void> {
   try {
     const token = localStorage.getItem("authToken");
     if (!token) throw new Error("Token não encontrado");
 
-    const response = await axios.get(`${apiUrl}/transacoes`, {
+    await axios.delete(`${apiUrl}/transacoes/${id}`, {
       headers: { Authorization: `Bearer ${token}` },
     });
 
-    return response.data.resultado;
+    return "Transação excluída com sucesso";
   } catch (error) {
     if (error instanceof AxiosError && error.response) {
       return error.response.data.mensagem;

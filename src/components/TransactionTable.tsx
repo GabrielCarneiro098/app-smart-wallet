@@ -1,13 +1,21 @@
 import { useState, useEffect } from "react";
 import styled from "styled-components";
+import { deleteTransaction } from "../services/deleteTransaction";
+import type { Transacao } from "../types/types";
+import {
+  Button,
+  Dialog,
+  DialogTitle,
+  DialogContent,
+  DialogActions,
+} from "@mui/material";
 
 const TableWrapper = styled.div`
   max-height: 200px;
-  overflow-y: auto;
+  overflow-y: overlay;
   border-radius: 8px;
   box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
 
-  /* header fixo */
   thead th {
     position: sticky;
     top: 0;
@@ -15,36 +23,20 @@ const TableWrapper = styled.div`
     z-index: 1;
   }
 
-  /* Scrollbar invisível por padrão */
   &::-webkit-scrollbar {
     width: 6px;
+    background: transparent;
   }
-
   &::-webkit-scrollbar-thumb {
     background: transparent;
     border-radius: 4px;
-    transition: background 0.3s ease; /* animação suave */
+    transition: background 0.3s ease;
   }
-
-  /* Só aparece com hover */
   &:hover::-webkit-scrollbar-thumb {
     background: ${(props) => props.theme.colors.border};
   }
-
   &:hover::-webkit-scrollbar-thumb:hover {
     background: ${(props) => props.theme.colors.text};
-  }
-
-  &::-webkit-scrollbar-track {
-    background: transparent;
-  }
-
-  /* Firefox */
-  scrollbar-width: none; /* invisível por padrão */
-  &:hover {
-    scrollbar-width: thin; /* aparece ao hover */
-    scrollbar-color: ${(props) => props.theme.colors.border} transparent;
-    transition: scrollbar-color 0.3s ease;
   }
 `;
 
@@ -74,14 +66,6 @@ const SortIcon = styled.span`
   font-size: 0.9rem;
 `;
 
-type Transacao = {
-  id: string;
-  createdAt: string;
-  descricao: string | null;
-  categoria: string | null;
-  valor: number;
-};
-
 type SortConfig = {
   key: keyof Transacao;
   direction: "asc" | "desc";
@@ -89,11 +73,18 @@ type SortConfig = {
 
 type Props = {
   transactions: Transacao[];
+  onTransactionDeleted?: (id: string) => void;
+  onEditTransaction?: (transaction: Transacao) => void;
 };
 
-export function TransactionTable({ transactions }: Props) {
+export function TransactionTable({
+  transactions,
+  onTransactionDeleted,
+  onEditTransaction,
+}: Props) {
   const [sortConfig, setSortConfig] = useState<SortConfig | null>(null);
   const [sortedData, setSortedData] = useState<Transacao[]>(transactions);
+  const [deleteId, setDeleteId] = useState<string | null>(null);
 
   useEffect(() => {
     setSortedData(transactions);
@@ -111,10 +102,8 @@ export function TransactionTable({ transactions }: Props) {
 
   function handleSort(key: keyof Transacao) {
     let direction: "asc" | "desc" = "asc";
-
-    if (sortConfig?.key === key && sortConfig.direction === "asc") {
+    if (sortConfig?.key === key && sortConfig.direction === "asc")
       direction = "desc";
-    }
 
     setSortConfig({ key, direction });
 
@@ -149,9 +138,15 @@ export function TransactionTable({ transactions }: Props) {
 
   function renderSortIcon(column: keyof Transacao) {
     if (sortConfig?.key !== column) return null;
-    return (
-      <SortIcon>{sortConfig.direction === "asc" ? "↑" : "↓"}</SortIcon>
-    );
+    return <SortIcon>{sortConfig.direction === "asc" ? "↑" : "↓"}</SortIcon>;
+  }
+
+  async function handleDelete(id: string) {
+    const result = await deleteTransaction(id);
+    console.log(result);
+    setSortedData((prev) => prev.filter((t) => t.id !== id));
+    onTransactionDeleted?.(id);
+    setDeleteId(null);
   }
 
   return (
@@ -171,6 +166,7 @@ export function TransactionTable({ transactions }: Props) {
             <th onClick={() => handleSort("valor")}>
               Valor {renderSortIcon("valor")}
             </th>
+            <th>Ações</th>
           </tr>
         </thead>
         <tbody>
@@ -180,10 +176,47 @@ export function TransactionTable({ transactions }: Props) {
               <td>{t.descricao || "-"}</td>
               <td>{t.categoria || "-"}</td>
               <td>R$ {t.valor.toFixed(2)}</td>
+              <td style={{ display: "flex", gap: "0.3rem" }}>
+                {onEditTransaction && (
+                  <Button
+                    size="small"
+                    color="primary"
+                    variant="outlined"
+                    onClick={() => onEditTransaction(t)}
+                  >
+                    Editar
+                  </Button>
+                )}
+                <Button
+                  size="small"
+                  color="error"
+                  variant="outlined"
+                  onClick={() => setDeleteId(t.id)}
+                >
+                  Excluir
+                </Button>
+              </td>
             </tr>
           ))}
         </tbody>
       </Table>
+
+      <Dialog open={deleteId !== null} onClose={() => setDeleteId(null)}>
+        <DialogTitle>Confirmar exclusão</DialogTitle>
+        <DialogContent>
+          Tem certeza que deseja excluir esta transação?
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={() => setDeleteId(null)}>Cancelar</Button>
+          <Button
+            color="error"
+            variant="contained"
+            onClick={() => deleteId && handleDelete(deleteId)}
+          >
+            Excluir
+          </Button>
+        </DialogActions>
+      </Dialog>
     </TableWrapper>
   );
 }

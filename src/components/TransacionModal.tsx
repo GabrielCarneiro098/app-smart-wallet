@@ -1,171 +1,169 @@
-import { useState } from "react";
-import styled from "styled-components";
+import {
+  Dialog,
+  DialogTitle,
+  DialogContent,
+  DialogActions,
+  Button,
+  TextField,
+  FormControl,
+  InputLabel,
+  Select,
+  MenuItem,
+} from "@mui/material";
+import { ThemeProvider } from "@mui/material/styles";
+import { useState, useEffect } from "react";
+import type { Transacao } from "../types/types";
+import { getMuiTheme } from "../styles/muiTheme";
 import { createTransaction } from "../services/createTransaction";
-
-type Transacao = {
-  id: string;
-  createdAt: string;
-  descricao: string | null;
-  categoria: string | null;
-  valor: number;
-};
+import { editTransaction } from "../services/editTransaction";
 
 type Props = {
   visible: boolean;
   onClose: () => void;
-  onTransactionCreated: (nova: Transacao) => void;
+  onTransactionCreated: (t: Transacao) => void;
+  transaction?: Transacao | null;
+  isDarkMode?: boolean;
 };
 
-const ModalOverlay = styled.div<{ visible: boolean }>`
-  display: ${(props) => (props.visible ? "flex" : "none")};
-  position: fixed;
-  top: 0;
-  left: 0;
-  width: 100%;
-  height: 100%;
-  background: rgba(0, 0, 0, 0.5);
-  align-items: center;
-  justify-content: center;
-  z-index: 1000;
-`;
-
-const ModalContent = styled.div`
-  background: ${(props) => props.theme.colors.card};
-  color: ${(props) => props.theme.colors.text};
-  padding: 2rem;
-  border-radius: 8px;
-  min-width: 300px;
-  box-shadow: 0 0 15px rgba(0, 0, 0, 0.2);
-  opacity: 0;
-  transform: scale(0.95);
-  animation: fadeIn 0.3s forwards;
-
-  @keyframes fadeIn {
-    to {
-      opacity: 1;
-      transform: scale(1);
-    }
-  }
-
-  form {
-    display: flex;
-    flex-direction: column;
-    gap: 1rem;
-  }
-
-  label {
-    display: flex;
-    flex-direction: column;
-    font-size: 0.9rem;
-  }
-
-  input {
-    padding: 0.6rem;
-    border: 1px solid ${(props) => props.theme.colors.border};
-    border-radius: 4px;
-    background: ${(props) => props.theme.colors.background};
-    color: ${(props) => props.theme.colors.text};
-  }
-
-  button {
-    padding: 0.6rem 1.2rem;
-    background: ${(props) => props.theme.colors.chart};
-    color: ${(props) => props.theme.colors.card};
-    border: none;
-    border-radius: 4px;
-    cursor: pointer;
-
-    &:hover {
-      opacity: 0.85;
-    }
-  }
-`;
-
-export function TransactionModal({ visible, onClose, onTransactionCreated }: Props) {
-  const [tipo, setTipo] = useState("");
+export function TransactionModal({
+  visible,
+  onClose,
+  onTransactionCreated,
+  transaction,
+  isDarkMode = false,
+}: Props) {
   const [descricao, setDescricao] = useState("");
   const [categoria, setCategoria] = useState("");
-  const [valor, setValor] = useState<number | "">("");
+  const [valor, setValor] = useState<number>(0);
+  const [tipo, setTipo] = useState<"entrada" | "saida">("entrada");
   const [loading, setLoading] = useState(false);
 
-  async function handleSubmit(e: React.FormEvent) {
-    e.preventDefault();
-
-    if (!descricao || !categoria || !valor) {
-      alert("Preencha todos os campos.");
-      return;
+  useEffect(() => {
+    if (transaction) {
+      setDescricao(transaction.descricao || "");
+      setCategoria(transaction.categoria || "");
+      setValor(transaction.valor);
+      setTipo(transaction.tipo);
+    } else {
+      setDescricao("");
+      setCategoria("");
+      setValor(0);
+      setTipo("entrada");
     }
+  }, [transaction]);
 
+  const saveTransaction = async () => {
     setLoading(true);
     try {
-      const nova = await createTransaction({
-        tipo,
-        descricao,
-        categoria,
-        valor: Number(valor),
-      });
+      if (transaction) {
+        // PATCH: apenas campos alterados
+        const updatedData: Partial<Transacao> = {};
+        if (descricao !== transaction.descricao)
+          updatedData.descricao = descricao;
+        if (categoria !== transaction.categoria)
+          updatedData.categoria = categoria;
+        if (valor !== transaction.valor) updatedData.valor = valor;
+        if (tipo !== transaction.tipo) updatedData.tipo = tipo;
 
-      if (nova && typeof nova === "object") {
-        onTransactionCreated(nova); // atualiza lista no Home
-        onClose();
-        setDescricao("");
-        setCategoria("");
-        setValor("");
+        if (Object.keys(updatedData).length === 0) {
+          alert("Nenhuma alteração feita.");
+          setLoading(false);
+          return;
+        }
+
+        const updated = await editTransaction(transaction.id, updatedData);
+
+        if (typeof updated === "string") {
+          alert(`Erro ao editar: ${updated}`);
+        } else {
+          onTransactionCreated({
+            ...transaction,
+            ...updated,
+          });
+        }
       } else {
-        alert("Erro ao criar transação: " + nova);
+        // Criação
+        const created = await createTransaction({
+          descricao,
+          categoria,
+          valor,
+          tipo,
+        });
+
+        if (typeof created === "string") {
+          alert(`Erro ao criar: ${created}`);
+        } else {
+          onTransactionCreated(created);
+        }
       }
+
+      onClose();
     } catch (err) {
-      console.error(err);
-      alert("Erro inesperado ao criar transação.");
+      console.error("Erro ao salvar transação:", err);
+      alert("Erro inesperado ao salvar a transação.");
     } finally {
       setLoading(false);
     }
-  }
+  };
 
   return (
-    <ModalOverlay visible={visible} onClick={onClose}>
-      <ModalContent onClick={(e) => e.stopPropagation()}>
-        <h2>Cadastro de Transação</h2>
-        <form onSubmit={handleSubmit}>
-          <label>
-            Tipo:
-            <input
-              type="text"
+    <ThemeProvider theme={getMuiTheme(isDarkMode)}>
+      <Dialog open={visible} onClose={onClose} fullWidth maxWidth="sm">
+        <DialogTitle>
+          {transaction ? "Editar" : "Adicionar"} Transação
+        </DialogTitle>
+        <DialogContent
+          style={{
+            display: "flex",
+            flexDirection: "column",
+            gap: "1rem",
+            marginTop: "0.5rem",
+          }}
+        >
+          <TextField
+            label="Descrição"
+            value={descricao}
+            onChange={(e) => setDescricao(e.target.value)}
+            fullWidth
+          />
+          <TextField
+            label="Categoria"
+            value={categoria}
+            onChange={(e) => setCategoria(e.target.value)}
+            fullWidth
+          />
+          <TextField
+            label="Valor"
+            type="number"
+            value={valor}
+            onChange={(e) => setValor(Number(e.target.value))}
+            fullWidth
+          />
+          <FormControl fullWidth>
+            <InputLabel>Tipo</InputLabel>
+            <Select
               value={tipo}
-              onChange={(e) => setTipo(e.target.value)}
-            />
-          </label>
-          <label>
-            Descrição:
-            <input
-              type="text"
-              value={descricao}
-              onChange={(e) => setDescricao(e.target.value)}
-            />
-          </label>
-          <label>
-            Categoria:
-            <input
-              type="text"
-              value={categoria}
-              onChange={(e) => setCategoria(e.target.value)}
-            />
-          </label>
-          <label>
-            Valor:
-            <input
-              type="number"
-              value={valor}
-              onChange={(e) =>
-                setValor(e.target.value === "" ? "" : Number(e.target.value))
-              }
-            />
-          </label>
-          <button type="submit" disabled={loading}>
-            {loading ? "Salvando..." : "Salvar"}
-          </button>
-        </form>
-      </ModalContent>
-    </ModalOverlay>
+              label="Tipo"
+              onChange={(e) => setTipo(e.target.value as "entrada" | "saida")}
+            >
+              <MenuItem value="entrada">Entrada</MenuItem>
+              <MenuItem value="saida">Saída</MenuItem>
+            </Select>
+          </FormControl>
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={onClose} disabled={loading}>
+            Cancelar
+          </Button>
+          <Button
+            variant="contained"
+            onClick={saveTransaction}
+            disabled={loading}
+          >
+            {transaction ? "Salvar" : "Adicionar"}
+          </Button>
+        </DialogActions>
+      </Dialog>
+    </ThemeProvider>
   );
 }
