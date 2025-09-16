@@ -62,18 +62,26 @@ export function Home() {
     loadTransactions();
   }, [navigate]);
 
+
   const filteredTransactions = transactions.filter((t) => {
-    if (filter === "todas") return true;
-    return t.tipo === filter;
+    const date = new Date(t.createdAt);
+    // Filtra por tipo
+    if (filter !== "todas" && t.tipo !== filter) return false;
+    // Filtra por mês se necessário
+    if (period === "mes" && date.getMonth() !== selectedMonth) return false;
+    return true;
   });
 
-  const totalBalance = filteredTransactions.reduce((sum, t) => {
-    const date = new Date(t.createdAt);
-    if (period === "mes" && date.getMonth() !== selectedMonth) return sum;
-    return sum + t.valor;
-  }, 0);
+  let totalBalance = 0;
+  if (filter === "todas") {
+    const entradas = filteredTransactions.filter(t => t.tipo === "entrada").reduce((sum, t) => sum + t.valor, 0);
+    const saidas = filteredTransactions.filter(t => t.tipo === "saida").reduce((sum, t) => sum + t.valor, 0);
+    totalBalance = entradas - saidas;
+  } else {
+    totalBalance = filteredTransactions.reduce((sum, t) => sum + t.valor, 0);
+  }
 
-  if (loading) return <p>Carregando transações...</p>;
+  if (loading) return <p style={{color: "${(props) => props.theme.colors.text}"}}>Carregando transações...</p>;
 
   return (
     <div>
